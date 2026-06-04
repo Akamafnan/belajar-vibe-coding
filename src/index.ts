@@ -1,6 +1,5 @@
-import { Elysia, t } from "elysia";
-import { db } from "./db";
-import { users } from "./db/schema";
+import { Elysia } from "elysia";
+import { usersRoute } from "./routes/users-route";
 
 const app = new Elysia()
   .get("/", () => ({
@@ -8,46 +7,7 @@ const app = new Elysia()
     message: "Welcome to Elysia, Drizzle, and MySQL API backend!",
     timestamp: new Date().toISOString(),
   }))
-  .get("/users", async () => {
-    try {
-      const allUsers = await db.select().from(users);
-      return {
-        success: true,
-        data: allUsers,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || "Failed to fetch users",
-      };
-    }
-  })
-  .post(
-    "/users",
-    async ({ body }) => {
-      try {
-        await db.insert(users).values({
-          name: body.name,
-          email: body.email,
-        });
-        return {
-          success: true,
-          message: "User created successfully",
-        };
-      } catch (error: any) {
-        return {
-          success: false,
-          error: error.message || "Failed to create user",
-        };
-      }
-    },
-    {
-      body: t.Object({
-        name: t.String(),
-        email: t.String({ format: "email" }),
-      }),
-    }
-  )
+  .use(usersRoute)
   .listen(Number(process.env.PORT) || 3000);
 
 console.log(
