@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { registerUser, getAllUsers, loginUser } from "../services/users-service";
+import { registerUser, getAllUsers, loginUser, getCurrentUser } from "../services/users-service";
 
 export const usersRoute = new Elysia({ prefix: "/api" })
   .post(
@@ -60,5 +60,26 @@ export const usersRoute = new Elysia({ prefix: "/api" })
         success: false,
         error: error.message || "Failed to fetch users",
       };
+    }
+  })
+  .get("/users/current", async ({ headers, set }) => {
+    const authorization = headers["authorization"];
+    if (!authorization || !authorization.startsWith("Bearer ")) {
+      set.status = 401;
+      return { error: "Unauthorized" };
+    }
+
+    const token = authorization.substring(7);
+
+    try {
+      const user = await getCurrentUser(token);
+      return { data: user };
+    } catch (error: any) {
+      if (error.message === "Unauthorized") {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+      set.status = 500;
+      return { error: error.message || "Internal Server Error" };
     }
   });
